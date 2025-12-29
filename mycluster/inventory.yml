@@ -1,0 +1,19 @@
+vars:
+  ansible_user: admin
+  ansible_python_interpreter: /usr/bin/python3.13
+children:
+  cluster:
+    hosts:
+      192.168.1.31:
+      192.168.1.32:
+      192.168.1.33:
+  manager:
+    hosts:
+      192.168.1.31:
+  pihole:
+    hosts:
+      192.168.1.32:
+      192.168.1.33:
+  portainer:
+    hosts:
+      192.168.1.31:
