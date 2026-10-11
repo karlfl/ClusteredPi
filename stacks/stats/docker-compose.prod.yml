@@ -1,0 +1,39 @@
+# Stats dashboard (ducklake) — analytics for kevsrobots.com
+# Deploy on any node:
+#   1. Build and push: (from ducklake repo)
+#      docker build -t 192.168.2.1:5000/ducklake:latest .
+#      docker push 192.168.2.1:5000/ducklake:latest
+#   2. Copy .env.example to .env and fill in values
+#   3. Ensure ~/ducklake/data exists with the DuckDB lake file
+#   4. docker compose -f docker-compose.prod.yml up -d
+
+services:
+  stats:
+    image: 192.168.2.1:5000/ducklake:latest
+    env_file: .env
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8008
+    volumes:
+      - /home/kev/ducklake/data:/app/data
+      - /home/kev/ducklake/contentlake.ducklake:/app/contentlake.ducklake
+      - /home/kev/ducklake/dashboard_data.json:/app/dashboard_data.json
+      - /home/kev/ducklake/reports:/app/reports
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8008/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --edge-ip-version 4 run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    restart: unless-stopped
+    depends_on:
+      stats:
+        condition: service_healthy
+    network_mode: "service:stats"
